@@ -4,15 +4,32 @@ using UnityEngine;
 
 public class Guard : MonoBehaviour
 {
-    // Start is called before the first frame update
+    public Transform pathHolder;
+
     void Start()
     {
         
     }
 
-    // Update is called once per frame
     void Update()
     {
         
+    }
+
+
+    //-- Handles drawing the waypoint Gizmos
+    private void OnDrawGizmos()
+    {
+        Vector3 startPosition = pathHolder.GetChild(0).position;
+        Vector3 previousPosition = startPosition;
+        foreach(Transform waypoint in pathHolder)
+        {
+            //-- adds spheres to make the waypoints visible, and draws a line to connect them
+            Gizmos.DrawSphere(waypoint.position, .3f);
+            Gizmos.DrawLine(previousPosition, waypoint.position);
+            previousPosition = waypoint.position;
+        }
+        //-- closes the waypoint loop
+        Gizmos.DrawLine(previousPosition, startPosition);
     }
 }
