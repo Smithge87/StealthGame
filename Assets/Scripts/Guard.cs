@@ -6,19 +6,25 @@ using UnityEngine;
 
 public class Guard : MonoBehaviour
 {
+    public static event System.Action OnGuardHasSpottedPlayer;
     public Transform pathHolder;
     public float speed = 5f;
     public float waitTime = .3f;
     public float turnSpeed = 90;
+    public float timeToSpotPlayer = .5f;
 
     public Light spotlight;
     public float viewDistance;
+    float playerVisibleTimer;
+    //-- mask needs to be created for the obstacle, and then variable assigned on the guard
     public LayerMask viewMask;
     float viewAngle;
     Transform player;
+    Color originalSpotlightColor;
 
     void Start()
     {
+        originalSpotlightColor = spotlight.color;
         player = GameObject.FindGameObjectWithTag("Player").transform;
         viewAngle = spotlight.spotAngle;
         Vector3[] waypoints = new Vector3[pathHolder.childCount];
@@ -36,7 +42,19 @@ public class Guard : MonoBehaviour
     {
         if (CanSeePlayer())
         {
-            spotlight.color = Color.red;
+            playerVisibleTimer += Time.deltaTime;        }
+        else
+        {
+            playerVisibleTimer -= Time.deltaTime;
+        }
+        playerVisibleTimer = Mathf.Clamp(playerVisibleTimer, 0, timeToSpotPlayer);
+        spotlight.color = Color.Lerp(originalSpotlightColor, Color.red, playerVisibleTimer/timeToSpotPlayer);
+        if (playerVisibleTimer >= timeToSpotPlayer)
+        {
+            if(OnGuardHasSpottedPlayer != null)
+            {
+                OnGuardHasSpottedPlayer();
+            }
         }
     }
 
