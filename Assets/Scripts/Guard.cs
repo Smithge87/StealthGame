@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using TMPro;
 using UnityEngine;
 
 public class Guard : MonoBehaviour
@@ -8,12 +9,16 @@ public class Guard : MonoBehaviour
     public Transform pathHolder;
     public float speed = 5f;
     public float waitTime = .3f;
+    public float turnSpeed = 90;
+
     void Start()
     {
         Vector3[] waypoints = new Vector3[pathHolder.childCount];
         for (int i=0; i < waypoints.Length; i++)
         {
             waypoints[i] = pathHolder.GetChild(i).position;
+            //-- keep the guard on his initial y-axis instead of centering on the waypoint
+            waypoints[i] = new Vector3(waypoints[i].x, transform.position.y, waypoints[i].z);
         }
         StartCoroutine(FollowPath(waypoints));
 
@@ -30,6 +35,8 @@ public class Guard : MonoBehaviour
         transform.position = waypoints[0];
         int targetWaypointIndex = 1;
         Vector3 targetWaypoint = waypoints[targetWaypointIndex];
+        //-- look at the target from the get-go before starting
+        transform.LookAt(targetWaypoint);
         while (true)
         {
             //-- next line is pretty standard. loop below is a brain bender.
@@ -40,8 +47,24 @@ public class Guard : MonoBehaviour
                 targetWaypointIndex = (targetWaypointIndex + 1) % waypoints.Length;
                 targetWaypoint = waypoints[targetWaypointIndex];
                 yield return new WaitForSeconds(waitTime);
+                //-- after moving, start looking in the direction of the next waypoint
+                yield return StartCoroutine(TurnToFace(targetWaypoint));
             }
             //-- advance one per frame
+            yield return null;
+        }
+    }
+
+    IEnumerator TurnToFace(Vector3 lookTarget)
+    {
+        //-- figure out the angle you need to turn
+        Vector3 directionToLookTarget = (lookTarget - transform.position).normalized;
+        float targetAngle = 90 - Mathf.Atan2(directionToLookTarget.z, directionToLookTarget.x) * Mathf.Rad2Deg;
+        //-- until the current angle meets the target angle, keep turning - don't use zero because... float stuff. Abs to handle negative angles
+        while (Mathf.Abs(Mathf.DeltaAngle(transform.eulerAngles.y, targetAngle)) > 0.05f)
+        {
+            float angle = Mathf.MoveTowards(transform.eulerAngles.y, targetAngle, turnSpeed * Time.deltaTime);
+            transform.eulerAngles = Vector3.up * angle;
             yield return null;
         }
     }
