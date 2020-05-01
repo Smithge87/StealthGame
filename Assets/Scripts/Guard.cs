@@ -11,8 +11,16 @@ public class Guard : MonoBehaviour
     public float waitTime = .3f;
     public float turnSpeed = 90;
 
+    public Light spotlight;
+    public float viewDistance;
+    public LayerMask viewMask;
+    float viewAngle;
+    Transform player;
+
     void Start()
     {
+        player = GameObject.FindGameObjectWithTag("Player").transform;
+        viewAngle = spotlight.spotAngle;
         Vector3[] waypoints = new Vector3[pathHolder.childCount];
         for (int i=0; i < waypoints.Length; i++)
         {
@@ -26,9 +34,28 @@ public class Guard : MonoBehaviour
 
     void Update()
     {
-        
+        if (CanSeePlayer())
+        {
+            spotlight.color = Color.red;
+        }
     }
 
+    bool CanSeePlayer()
+    {
+        if (Vector3.Distance(transform.position, player.position) < viewDistance)
+        {
+            Vector3 directionToPlayer = player.position - transform.position;
+            float angleBetweenGuardAndPlayer = Vector3.Angle(transform.forward, directionToPlayer);
+            if (angleBetweenGuardAndPlayer < viewAngle / 2)
+            {
+                if (!Physics.Linecast(transform.position, player.position, viewMask))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
     IEnumerator FollowPath (Vector3[] waypoints)
     {
         //-- there's time compexity here and i need to spend some time understanding it... 
@@ -80,6 +107,8 @@ public class Guard : MonoBehaviour
             Gizmos.DrawSphere(waypoint.position, .3f);
             Gizmos.DrawLine(previousPosition, waypoint.position);
             previousPosition = waypoint.position;
+            Gizmos.color = Color.red;
+            Gizmos.DrawRay(transform.position, transform.forward * viewDistance);
         }
         //-- closes the waypoint loop
         Gizmos.DrawLine(previousPosition, startPosition);
