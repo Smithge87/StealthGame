@@ -11,10 +11,13 @@ public class Player : MonoBehaviour
     float angle;
     float smoothMovementMagnitude;
     float smoothMoveVelocity;
+    Vector3 velocity;
+
+    Rigidbody rigidBody;
     // Start is called before the first frame update
     void Start()
     {
-        
+        rigidBody = GetComponent<Rigidbody>();
     }
 
     // Update is called once per frame
@@ -31,6 +34,14 @@ public class Player : MonoBehaviour
         angle = Mathf.LerpAngle(angle, targetAngle, Time.deltaTime * turnSpeed * inputMagnitude);
 
         transform.eulerAngles = Vector3.up * angle;
-        transform.Translate(transform.forward * moveSpeed * Time.deltaTime *smoothMovementMagnitude, Space.World);
+        transform.Translate(transform.forward * moveSpeed * Time.deltaTime * smoothMovementMagnitude, Space.World);
+
+        velocity = transform.forward * moveSpeed * smoothMovementMagnitude;
+    }
+
+    void FixedUpdate()
+    {
+        rigidBody.MoveRotation(Quaternion.Euler(Vector3.up * angle));
+        rigidBody.MovePosition(rigidBody.position + velocity * Time.deltaTime);
     }
 }
